@@ -1,3 +1,7 @@
+const ACTIVATE_CACHE = false;
+const SOUND_CACHE_NAME = "jodl-sound-cache";
+const APP_VERSION = ".5"
+
 // Set constraints for the video stream
 var constraints = { video: { facingMode: "user" }, audio: false };
 var track = null;
@@ -26,9 +30,6 @@ var aps =
 	motion_window_d : 100
 }
 
-var SOUND_CACHE_NAME = "jodl-sound-cache";
-var APP_VERSION = ".4"
-
 // Define constants
 const cameraView = document.querySelector("#camera--view"),
     cameraOutput = document.querySelector("#camera--output"),
@@ -45,7 +46,7 @@ function cameraStart()
             cameraView.srcObject = stream;
         })
         .catch(function(error) {
-            console.error("Oops. Something is broken.", error);
+            console.error("navigator.mediaDevices.getUserMedia failed", error);
         });
 }
 
@@ -379,7 +380,7 @@ function onTick()
 
 
 /// offline cache:
-if ('serviceWorker' in navigator) 
+if (ACTIVATE_CACHE && 'serviceWorker' in navigator) 
 {
   navigator.serviceWorker.register('service-worker.js')
   .then(function(registration) {
