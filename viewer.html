@@ -1,0 +1,65 @@
+
+<html lang=”en”>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="x-ua-compatible" content="ie=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+		<!-- Name of the app -->
+		<title>Jodl Viewer App</title>
+
+		<!-- Link to main style sheet -->
+		<link rel="stylesheet" href="style.css"> 
+	</head>
+	<body>
+
+		<!-- Camera -->
+		<main id="camera">
+
+			<h3> Jodl Sensor VIEWER</h3>
+			
+			<form id="px_form" action="/action_page.php">
+				<h4>Motion Detection Settings</h4>
+				Pixel Value Threshold (0-255): <input type="number" id="pixel_value_form" value="100"><br>
+				Sensitivity Threshold (0-1000): <input type="number" id="sensitivity_value_form" value="10"><br>
+				Sensitivity Overshot (0-1000): <input type="number" id="sensitivity_overshot_form" value="100"><br>
+				Show Camera Video: <input type="checkbox" id ="show_camera_window" value="true"><br>
+				
+				<h4>Upload Settings</h4>
+				User ID: <input type="text" id="user_id_name" value="unkown_user"><br>
+				Upload Motion Images: <input type="checkbox" id ="upload_motion_images" value="false"><br>
+				Upload Camera Images: <input type="checkbox" id ="upload_camera_view_images" value="false"><br>
+				
+				<h4>Sound Settings</h4>
+				Motion Sound: <input type="url" id="motion_sound_url_form" value="https://file-examples.com/wp-content/uploads/2017/11/file_example_MP3_2MG.mp3" size = "100">
+				<button onclick="testSound()">Test Sound</button> <br>
+				Time Play No Motion (secs): <input type="number" id="time_play_no_motion" value="2"><br>
+				
+				<button onclick="uploadSettings()">Upload Settings</button> <br>
+				
+				<h4>Viewer Settings</h4>
+				Update Images: <input type="checkbox" id ="update_images" value="true"><br>
+				
+			</form> 
+			
+			
+			
+			<div id="upload_app"></div>
+		    
+			
+			<div id="last_img_url"></div>
+			<!-- Motion output -->
+		    <img src="//:0" alt="" id="camera--output" ></img>
+			<img src="//:0" alt="" id="camera--view" ></img>
+			
+			
+			
+			
+		</main>
+
+		<!-- Reference to your JavaScript file -->
+		<script src="https://sdk.amazonaws.com/js/aws-sdk-2.283.1.min.js"></script>
+		<script src="image_upload.js"></script> 		
+		<script src="viewer_app.js"></script> 
+	</body>
+</html>

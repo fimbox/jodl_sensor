@@ -1,0 +1,83 @@
+<html lang=”en”>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="x-ua-compatible" content="ie=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+		<!-- Name of the app -->
+		<title>Jodle Sensor App</title>
+
+		<!-- Link to main style sheet -->
+		<link rel="stylesheet" href="style.css"> 
+	</head>
+	<body>
+
+		<!-- Camera -->
+		<main id="camera">
+
+			<h3> Jodl Sensor 1.1.0<div id="app_version_cap" style="display: inline">.?</div> </h3>
+			
+			<form id="px_form" action="/action_page.php">
+				<h4>Motion Detection Settings</h4>
+				Pixel Value Threshold (0-255): <input type="number" id="pixel_value_form" value="50" style="width: 4em"><br>
+				Sensitivity Threshold (0-1000): <input type="number" id="sensitivity_value_form" value="5" style="width: 4em"><br>
+				Sensitivity Overshot (0-1000): <input type="number" id="sensitivity_overshot_form" value="70" style="width: 4em"><br>
+				Motion Window L/R/U/D(0-100): 
+					<input type="number" id="motion_window_l" value="0" min="0" max="100" style="width: 4em"> 
+					<input type="number" id="motion_window_r" value="100" value="0" min="0" style="width: 4em"> 
+					<input type="number" id="motion_window_u" value="0" value="0" min="0" style="width: 4em"> 
+					<input type="number" id="motion_window_d" value="100" value="0" min="0" style="width: 4em"> <br>  
+				Show Camera Video: <input type="checkbox" id ="show_camera_window" value="true"><br>
+				
+				<h4>Upload Settings</h4>
+				User ID: <input type="text" id="user_id_name" value=""><br>
+				Upload Motion Images: <input type="checkbox" id ="upload_motion_images" value="false"><br>
+				Upload Camera Images: <input type="checkbox" id ="upload_camera_view_images" value="false"><br>
+				
+				<h4>Sound Settings</h4>
+				Motion Sound: 
+				
+				<!-- <input type="url" id="motion_sound_url_form" value="https://file-examples.com/wp-content/uploads/2017/11/file_example_MP3_2MG.mp3" size = "100"><br> -->
+				<select id="motion_sound_url_form">
+				  <option value="jodl_song_louder.mp3">jodl_song_louder.mp3</option>
+				  <option value="jodl_song.m4a">jodl_song.m4a</option>
+				  <option value="hallo.m4a">hallo.m4a</option>
+				  <option value="fart.mp3">fart.m4a</option>
+				  <option value="fart_laugh.m4a">fart_laugh.m4a</option>
+				</select> <br>
+				Volume (0-100): <input type="number" id="sound_volume" value="100" style="width: 4em"><br>
+				Time Play No Motion (secs): <input type="number" id="time_play_no_motion" value="2" style="width: 4em"><br>
+				Restart after stop: <input type="checkbox" id="restart_sound_opt" value="false"><br>
+				Cache status: <div id="cache_support_cap" style="display: inline"> unkown </div>
+			</form> 
+			
+			<button onclick="setThresholdValues()">Set</button> <button onclick="uploadSettings()">Upload</button> <button onclick="downloadSettings()">Download</button> Sync: <input type="checkbox" id="active_sync_settings" value="false"> <br><br>
+			
+			<div id="upload_app"></div>
+		
+			<button onclick="uploadCameraViewImage()">Test Upload</button> <button onclick="deleteAllCaches()">Delete Caches</button> <br><br>
+			
+			<div>
+				<!-- Camera canvas (hidden)-->
+				<canvas id="camera--canvas" ></canvas>
+				
+				
+				<!-- Motion output -->
+				<img src="//:0" alt="" id="camera--output">
+
+				<!-- Camera view -->
+				<video id="camera--view" autoplay playsinline></video>
+			</div>
+
+			<br>Download Motion: <input type="checkbox" id="download_motion_view" value="false"><br>
+			<!-- Remote view -->
+		    <img src="//:0" alt="" id="remote--output">
+		    
+		</main>
+
+		<!-- Reference to your JavaScript file -->
+		<script src="https://sdk.amazonaws.com/js/aws-sdk-2.283.1.min.js"></script>
+		<script src="image_upload.js"></script> 		
+		<script src="app.js"></script> 
+	</body>
+</html>

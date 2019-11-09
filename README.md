@@ -1,2 +1,2 @@
-# jodl_sensor
-A PWA webapp that uses the device camera to detect motion and plays a custom sound 
+# camera-app
+Super awesome camera web app built with HTML, CSS, and JS.
