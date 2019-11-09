@@ -3,24 +3,31 @@ var constraints = { video: { facingMode: "user" }, audio: false };
 var track = null;
 var old_image_data = null;
 var alarm_sound = null;
-var alarm_sound_url = "";
-var play_sound_sec = 2;
+
 var motion_secs_idle = 1000000;
-var show_camera_window = true;
-var upload_motion_images = false;
-var upload_camera_view_images = false;
 var user_id_name = "";
-var restart_sound_opt = false;
-var PIXEL_VALUE_TH = 100;
-var NUM_PIXEL_MOTION_TH = 0.01;
-var NUM_PIXEL_OVER_MOTION_TH = 0.1;
-var motion_window_l = 0;
-var motion_window_r = 100;
-var motion_window_u = 0;
-var motion_window_d = 100;
+
+/// synced app settings
+var aps = 
+{
+	alarm_sound_url : "",
+	play_sound_sec : 2,
+	sound_volume : 1.0, // TODOO
+	show_camera_window : true,
+	upload_motion_images : false,
+	upload_camera_view_images : false,
+	restart_sound_opt : false,
+	PIXEL_VALUE_TH : 100,
+	NUM_PIXEL_MOTION_TH : 0.01,
+	NUM_PIXEL_OVER_MOTION_TH : 0.1,
+	motion_window_l : 0,
+	motion_window_r : 100,
+	motion_window_u : 0,
+	motion_window_d : 100
+}
 
 var SOUND_CACHE_NAME = "jodl-sound-cache";
-var APP_VERSION = ".3"
+var APP_VERSION = ".4"
 
 // Define constants
 const cameraView = document.querySelector("#camera--view"),
@@ -47,20 +54,23 @@ function setThresholdValues()
 	//var px_form = document.getElementById("px_form");
 	document.getElementById("app_version_cap").innerHTML = APP_VERSION;
 	
-	PIXEL_VALUE_TH = document.getElementById("pixel_value_form").value;
-	NUM_PIXEL_MOTION_TH = document.getElementById("sensitivity_value_form").value*0.001;
-	NUM_PIXEL_OVER_MOTION_TH = document.getElementById("sensitivity_overshot_form").value*0.001;
-	motion_window_l = document.getElementById("motion_window_l").value;
-	motion_window_r = document.getElementById("motion_window_r").value;
-	motion_window_u = document.getElementById("motion_window_u").value;
-	motion_window_d = document.getElementById("motion_window_d").value;
+	aps.PIXEL_VALUE_TH = document.getElementById("pixel_value_form").value;
+	aps.NUM_PIXEL_MOTION_TH = document.getElementById("sensitivity_value_form").value*0.001;
+	aps.NUM_PIXEL_OVER_MOTION_TH = document.getElementById("sensitivity_overshot_form").value*0.001;
+	aps.motion_window_l = document.getElementById("motion_window_l").value;
+	aps.motion_window_r = document.getElementById("motion_window_r").value;
+	aps.motion_window_u = document.getElementById("motion_window_u").value;
+	aps.motion_window_d = document.getElementById("motion_window_d").value;
 	
-	show_camera_window = document.getElementById("show_camera_window").checked;
-	upload_motion_images = document.getElementById("upload_motion_images").checked;
-	upload_camera_view_images = document.getElementById("upload_camera_view_images").checked;
+	aps.show_camera_window = document.getElementById("show_camera_window").checked;
+	aps.upload_motion_images = document.getElementById("upload_motion_images").checked;
+	aps.upload_camera_view_images = document.getElementById("upload_camera_view_images").checked;
 	
-	alarm_sound_url = document.getElementById("motion_sound_url_form").value;
-	
+	aps.alarm_sound_url = document.getElementById("motion_sound_url_form").value;
+	aps.play_sound_sec = document.getElementById("time_play_no_motion").value;
+	aps.restart_sound_opt = document.getElementById("restart_sound_opt").checked;
+	aps.sound_volume = document.getElementById("sound_volume").value *0.01;
+
 	user_id_name = document.getElementById("user_id_name").value;
 	if(user_id_name == "")
 	{
@@ -68,6 +78,18 @@ function setThresholdValues()
 		document.getElementById("user_id_name").value = user_id_name;
 	}
 	
+	reloadSound(aps.alarm_sound_url)
+	
+	if(!aps.show_camera_window)
+		cameraView.style.display ="none";
+	else
+		cameraView.style.display ="block";
+	
+	cacheAlarmSound();
+}		
+
+function reloadSound(sound_path)
+{
 	if(alarm_sound)
 	{
 		alarm_sound.pause();
@@ -75,20 +97,52 @@ function setThresholdValues()
 		delete alarm_sound;
 	}
 	
-	alarm_sound = new Audio(alarm_sound_url);
+	alarm_sound = new Audio(sound_path);
+}
+
+function uploadSettings()
+{
+	console.log("uploading settings");
+	setThresholdValues();
+
+	addImage("settings_store", "settings.json", JSON.stringify(aps));
+}
+function downloadSettings()
+{
+	deleteAllCaches();
 	
-	play_sound_sec = document.getElementById("time_play_no_motion").value;
-	restart_sound_opt = document.getElementById("restart_sound_opt").checked;
+	var set_url = getS3Filename("settings_store/settings.json");
 	
-	if(!show_camera_window)
-		cameraView.style.display ="none";
-	else
-		cameraView.style.display ="block";
+	console.log("downloading settings from "+set_url);
+
+	fetch(set_url)
+	.then((resp) => resp.json())
+	.then(function(data) 
+	{
+		aps = data;
+	})
 	
+	if(aps.alarm_sound_url != document.getElementById("motion_sound_url_form").value)
+		reloadSound(aps.alarm_sound_url);
+
+	document.getElementById("pixel_value_form").value = aps.PIXEL_VALUE_TH ;
+	document.getElementById("sensitivity_value_form").value = aps.NUM_PIXEL_MOTION_TH / 0.001;
+	document.getElementById("sensitivity_overshot_form").value = aps.NUM_PIXEL_OVER_MOTION_TH / 0.001;
+	document.getElementById("motion_window_l").value = aps.motion_window_l;
+	document.getElementById("motion_window_r").value = aps.motion_window_r;
+	document.getElementById("motion_window_u").value = aps.motion_window_u;
+	document.getElementById("motion_window_d").value = aps.motion_window_d;
 	
-	cacheAlarmSound();
+	document.getElementById("show_camera_window").checked = aps.show_camera_window;
+	document.getElementById("upload_motion_images").checked = aps.upload_motion_images;
+	document.getElementById("upload_camera_view_images").checked = aps.upload_camera_view_images;
 	
-}		
+	document.getElementById("motion_sound_url_form").value = aps.alarm_sound_url;
+	document.getElementById("time_play_no_motion").value = aps.play_sound_sec;
+	document.getElementById("restart_sound_opt").checked = aps.restart_sound_opt;
+	document.getElementById("sound_volume").value = aps.sound_volume / 0.01;
+
+}
 
 function getFormattedTime() 
 {
@@ -104,31 +158,28 @@ function getFormattedTime()
 
 function uploadMotionImage()
 {
-	createFolder(user_id_name);	
-	var date_str = getFormattedTime();
-
-	console.log("uploading motion image "+date_str);
-	
+	console.log("uploading motion image ");	
 	cameraCanvas.toBlob(function(blob) 
 	{
-		addImage(user_id_name, "motion_"+date_str + ".png", blob);
-	});
+		addImage("live_view", "motion_live.jpg", blob);
+	}, "image/jpeg", 0.5 );
 }
 
 function uploadCameraViewImage()
 {
-	createFolder(user_id_name);	
-	var date_str = getFormattedTime();
-
-	console.log("uploading camera image "+date_str);
-	
+	console.log("uploading camera image ");
 	cameraCanvas.toBlob(function(blob) 
 	{
-		addImage(user_id_name, "camera_"+date_str + ".jpg", blob);
+		addImage("live_view", "camera_live.jpg", blob);
 	}, "image/jpeg", 0.5 );
-	
 }
 
+function downloadMotionImage()
+{
+	deleteAllCaches();
+
+	document.getElementById("remote--output").src = getS3Filename("live_view/motion_live.jpg");;
+}
 function cacheAlarmSound()
 {
 	document.getElementById("cache_support_cap").innerHTML = "checking";
@@ -142,7 +193,7 @@ function cacheAlarmSound()
 		  cache.keys().then(function(cachedRequests)   
 		  {
 		    console.log("cached: '"+ cachedRequests.url+"'");
-			if( cachedRequests.url == alarm_sound_url)
+			if( cachedRequests.url == aps.alarm_sound_url)
 			{
 				console.log("sound already cached");
 				document.getElementById("cache_support_cap").innerHTML = "already cached";
@@ -157,7 +208,7 @@ function cacheAlarmSound()
 		
 		caches.open(SOUND_CACHE_NAME).then(function(cache) 
 		{
-			cache.addAll([alarm_sound_url]).then(function() 
+			cache.addAll([aps.alarm_sound_url]).then(function() 
 			{
 				console.log("resonse succeed");
 				document.getElementById("cache_support_cap").innerHTML = "cached";
@@ -181,6 +232,11 @@ function cacheAlarmSound()
 
 function onTick() 
 {
+	if(document.getElementById("active_sync_settings").checked)
+		downloadSettings();
+	if(document.getElementById("download_motion_view").checked)
+		downloadMotionImage();
+
 	var cw =cameraView.videoWidth;
 	var ch =cameraView.videoHeight;
 	
@@ -194,7 +250,7 @@ function onTick()
 	
 	ctx.drawImage(cameraView, 0, 0);
 	
-	if(upload_camera_view_images)
+	if(aps.upload_camera_view_images)
 		uploadCameraViewImage();
 	
 	
@@ -208,10 +264,10 @@ function onTick()
 	
 	var n_pixel_changed = 0;
 	
-	var x_start = motion_window_l * cw * 0.01;
-	var x_end = motion_window_r * cw * 0.01;
-	var y_start = motion_window_u * ch * 0.01;
-	var y_end = motion_window_d * ch * 0.01;
+	var x_start = aps.motion_window_l * cw * 0.01;
+	var x_end = aps.motion_window_r * cw * 0.01;
+	var y_start = aps.motion_window_u * ch * 0.01;
+	var y_end = aps.motion_window_d * ch * 0.01;
 	
 	for(var x = x_start; x < x_end; x++)
 	for(var y = y_start; y < y_end; y++)
@@ -221,7 +277,7 @@ function onTick()
 		var change = Math.abs(current_image_data[n] - old_image_data[n] );
 		image_diff_data[n] = change; 
 		
-		if( change > PIXEL_VALUE_TH )
+		if( change > aps.PIXEL_VALUE_TH )
 			n_pixel_changed ++;
 		
 	}
@@ -230,10 +286,10 @@ function onTick()
 	
 	var motion_state = 0;
 	
-	if(n_pixel_changed > cw*ch * NUM_PIXEL_MOTION_TH )
+	if(n_pixel_changed > cw*ch * aps.NUM_PIXEL_MOTION_TH )
 		motion_state = 1;
 	
-	if(n_pixel_changed > cw*ch * NUM_PIXEL_OVER_MOTION_TH )
+	if(n_pixel_changed > cw*ch * aps.NUM_PIXEL_OVER_MOTION_TH )
 		motion_state = 2;
 	
 	/// just visualize the motion:
@@ -242,7 +298,7 @@ function onTick()
 	{
 		var n = (y * cw + x)*4;
 		
-		current_image_data[n] = image_diff_data[n]>PIXEL_VALUE_TH ? 255 : 0;
+		current_image_data[n] = image_diff_data[n]>aps.PIXEL_VALUE_TH ? 255 : 0;
 		
 		if( motion_state == 1)
 			current_image_data[n+1] = 255;
@@ -257,6 +313,9 @@ function onTick()
 	ctx.putImageData(my_image, 0, 0);
     cameraOutput.src = cameraCanvas.toDataURL("image/webp");
 	
+	if(aps.upload_motion_images)
+		uploadMotionImage();
+
 	if(motion_state == 1)
 	{
 		motion_secs_idle = 0;
@@ -277,14 +336,13 @@ function onTick()
 		}, 100);
 	
 		
-		if(upload_motion_images)
-			uploadMotionImage();
+
 	}
 	else
 	{
 		motion_secs_idle ++;
 		
-		if(motion_secs_idle > play_sound_sec && alarm_sound.volume == 1.0)
+		if(motion_secs_idle > aps.play_sound_sec && alarm_sound.volume == 1.0)
 		{
 			alarm_sound.volume = 0.9
 			// fade out
@@ -307,7 +365,7 @@ function onTick()
 					clearInterval(intervalID);
 					
 					alarm_sound.pause();
-					if(restart_sound_opt)
+					if(aps.restart_sound_opt)
 						alarm_sound.currentTime = 0.0;
 			
 				}
